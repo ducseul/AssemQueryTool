@@ -17,11 +17,11 @@ WHERE
   user_Name = 'John';
 ```
   2. Re-assemble parameter to querry (**Word with Intellij only**): When you deal with Hibernate or sql, you would get some things like this when debugging:
-  -HQL: 
+  - HQL: 
 ```sql
 select * from Category c   where c.isActive = 1 and c.categoryTypeCode=?  AND (c.deptId  IS NULL OR c.deptId = ? OR c.deptId IN (:listParents)) order by   NLSSORT(c.name,'NLS_SORT=vietnamese')
 ```
-  -Params (from Intellij version 2020): 
+  - Params (from Intellij version 2020): 
 ```sql
 0 = "CATEGORY_FIELD"
 1 = {Long@9281} 6
@@ -44,7 +44,8 @@ WHERE
 ORDER BY
   NLSSORT(c.name, 'NLS_SORT=vietnamese');
 ```
-3. Turn **camelCase** to **camel_Case** for SQL rules
+3. Turn **camelCase** to **camel_Case** for SQL rules. 
+***Warning: This feature could lead to some miss understanding when your Database is camelCase type***
 
 # Build
 1. Using java version >= 8
