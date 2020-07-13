@@ -46,3 +46,8 @@ ORDER BY
 ```
 3. Turn **camelCase** to **camel_Case** for SQL rules
 
+# Build
+1. Using java version >= 8
+2. My project is base on Netbean 8.2 file structure. 
+3. You would need *sql-formatter-1.0.1.jar* which can download belown: 
+https://github.com/vertical-blank/sql-formatter
