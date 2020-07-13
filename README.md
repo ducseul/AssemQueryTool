@@ -16,7 +16,7 @@ FROM
 WHERE
   user_Name = 'John';
 ```
-  2. Re-assemble parameter to querry (**Word with Intellij only**): When you deal with Hibernate or sql, you would get some things like this when debugging:
+  2. Re-assemble parameter to querry (**Work with Intellij only**): When you deal with Hibernate or sql, you would get some things like this when debugging:
   - HQL: 
 ```sql
 select * from Category c   where c.isActive = 1 and c.categoryTypeCode=?  AND (c.deptId  IS NULL OR c.deptId = ? OR c.deptId IN (:listParents)) order by   NLSSORT(c.name,'NLS_SORT=vietnamese')
@@ -50,5 +50,5 @@ ORDER BY
 # Build
 1. Using java version >= 8
 2. My project is base on Netbean 8.2 file structure. 
-3. You would need *sql-formatter-1.0.1.jar* which can download belown: 
+3. You would need *sql-formatter-1.0.1.jar* which can download belown:   
 https://github.com/vertical-blank/sql-formatter
