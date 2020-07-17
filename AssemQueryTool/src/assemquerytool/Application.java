@@ -6,16 +6,26 @@
 package assemquerytool;
 
 import com.github.vertical_blank.sqlformatter.SqlFormatter;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
 
 /**
  *
@@ -36,6 +46,8 @@ public class Application extends javax.swing.JFrame {
     public Application() {
         keyword = new HashSet<>(Arrays.asList(arr));
         initComponents();
+        txtParam.setName("txtParam");
+        txtQuery.setName("txtQuery");
         txtWarning.setVisible(false);
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
         this.setLocation(dim.width / 2 - this.getSize().width / 2, dim.height / 2 - this.getSize().height / 2);
@@ -68,6 +80,11 @@ public class Application extends javax.swing.JFrame {
 
         txtParam.setColumns(20);
         txtParam.setRows(5);
+        txtParam.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                txtParamMousePressed(evt);
+            }
+        });
         jScrollPane2.setViewportView(txtParam);
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
@@ -87,6 +104,11 @@ public class Application extends javax.swing.JFrame {
 
         txtQuery.setColumns(20);
         txtQuery.setRows(5);
+        txtQuery.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                txtQueryMousePressed(evt);
+            }
+        });
         jScrollPane1.setViewportView(txtQuery);
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
@@ -177,6 +199,11 @@ public class Application extends javax.swing.JFrame {
         String query = txtQuery.getText();
         System.out.println(query);
 
+        if (query == null || query.equals("")) {
+            JOptionPane.showMessageDialog(null, "Nothing to build!");
+            return;
+        }
+
         StringTokenizer st = new StringTokenizer(query, " ");
         StringBuilder filter = new StringBuilder();
         while (st.hasMoreTokens()) {
@@ -214,13 +241,25 @@ public class Application extends javax.swing.JFrame {
 
     private void isCamelRevActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_isCamelRevActionPerformed
         // TODO add your handling code here:
-        if(isCamelRev.isSelected()){
+        if (isCamelRev.isSelected()) {
             txtWarning.setText("WARNING: camelCase Reversing could lead to SQL mis-structure!");
             txtWarning.setVisible(true);
         } else {
             txtWarning.setVisible(false);
         }
     }//GEN-LAST:event_isCamelRevActionPerformed
+
+    /**
+     * Paste clipboard into text area user right click on
+     */
+    private void txtParamMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_txtParamMousePressed
+        doPasteClipBoard(evt);
+    }//GEN-LAST:event_txtParamMousePressed
+
+    private void txtQueryMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_txtQueryMousePressed
+        // TODO add your handling code here:
+        doPasteClipBoard(evt);
+    }//GEN-LAST:event_txtQueryMousePressed
 
     /**
      * @param args the command line arguments
@@ -333,5 +372,25 @@ public class Application extends javax.swing.JFrame {
 
     private static boolean isSqlKeywords(String param) {
         return keyword.contains(param.toUpperCase().trim());
+    }
+
+    private void doPasteClipBoard(MouseEvent evt) {
+        try {
+            // TODO add your handling code here:
+            boolean isRightClick = SwingUtilities.isRightMouseButton(evt);
+            if (isRightClick) {
+                Clipboard c = Toolkit.getDefaultToolkit().getSystemClipboard();
+                String clipBoard = c.getData(DataFlavor.stringFlavor) + "";
+                String name = ((JTextArea) evt.getSource()).getName();
+                if ("txtParam".equals(name)) {
+                    txtParam.setText(clipBoard);
+                } else if ("txtQuery".equals(name)) {
+                    txtQuery.setText(clipBoard);
+                }
+            }
+//            System.out.println("Source: "+((JTextArea)evt.getSource()).getName());
+        } catch (UnsupportedFlavorException | IOException ex) {
+            Logger.getLogger(Application.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }
