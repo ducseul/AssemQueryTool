@@ -36,6 +36,7 @@ public class Application extends javax.swing.JFrame {
     public Application() {
         keyword = new HashSet<>(Arrays.asList(arr));
         initComponents();
+        txtWarning.setVisible(false);
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
         this.setLocation(dim.width / 2 - this.getSize().width / 2, dim.height / 2 - this.getSize().height / 2);
     }
@@ -57,6 +58,8 @@ public class Application extends javax.swing.JFrame {
         txtQuery = new javax.swing.JTextArea();
         btnBuild = new javax.swing.JButton();
         btnClear = new javax.swing.JButton();
+        isCamelRev = new javax.swing.JCheckBox();
+        txtWarning = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("AssemQuerryTool - ducnm");
@@ -71,15 +74,13 @@ public class Application extends javax.swing.JFrame {
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.PREFERRED_SIZE, 443, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, Short.MAX_VALUE))
+            .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 490, Short.MAX_VALUE)
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 365, Short.MAX_VALUE))
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 410, Short.MAX_VALUE))
         );
 
         jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Query Sentence"));
@@ -92,15 +93,13 @@ public class Application extends javax.swing.JFrame {
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jPanel2Layout.createSequentialGroup()
-                .addGap(0, 6, Short.MAX_VALUE)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 447, javax.swing.GroupLayout.PREFERRED_SIZE))
+            .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 490, Short.MAX_VALUE)
         );
         jPanel2Layout.setVerticalGroup(
             jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel2Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 365, Short.MAX_VALUE))
+                .addComponent(jScrollPane1))
         );
 
         btnBuild.setText("Build Querry");
@@ -119,36 +118,54 @@ public class Application extends javax.swing.JFrame {
             }
         });
 
+        isCamelRev.setText("'camelCase' Reversing");
+        isCamelRev.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                isCamelRevActionPerformed(evt);
+            }
+        });
+
+        txtWarning.setFont(new java.awt.Font("Dialog", 2, 12)); // NOI18N
+        txtWarning.setForeground(new java.awt.Color(255, 0, 51));
+        txtWarning.setText("jLabel1");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                     .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(btnBuild, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(isCamelRev)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnBuild, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(btnClear, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(txtWarning)))
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnBuild)
-                    .addComponent(btnClear))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addComponent(btnClear)
+                    .addComponent(isCamelRev)
+                    .addComponent(txtWarning))
+                .addContainerGap())
         );
 
         pack();
@@ -164,13 +181,15 @@ public class Application extends javax.swing.JFrame {
         StringBuilder filter = new StringBuilder();
         while (st.hasMoreTokens()) {
             String str = st.nextToken();
-            if (!isSqlKeywords(str)) {
-                StringBuilder sb = new StringBuilder(str);
-                for (int i = 1; i < str.length(); i++) {
-                    if (Character.isUpperCase(str.charAt(i))
-                            && Character.isLowerCase(str.charAt(i - 1))) {
-                        sb.insert(i, "_");
-                        str = sb.toString();
+            if (isCamelRev.isSelected()) {
+                if (!isSqlKeywords(str)) {
+                    StringBuilder sb = new StringBuilder(str);
+                    for (int i = 1; i < str.length(); i++) {
+                        if (Character.isUpperCase(str.charAt(i))
+                                && Character.isLowerCase(str.charAt(i - 1))) {
+                            sb.insert(i, "_");
+                            str = sb.toString();
+                        }
                     }
                 }
             }
@@ -182,7 +201,7 @@ public class Application extends javax.swing.JFrame {
         txtQuery.setText(query);
         ArrayList<String> listParam = analysParam(param);
 //        listParam.stream().forEach(System.out::println);
-        getQuerry(query, listParam);
+        getQuery(query, listParam);
 
         JOptionPane.showMessageDialog(null, "Output has been copied to Clipboard!");
     }//GEN-LAST:event_btnBuildActionPerformed
@@ -192,6 +211,16 @@ public class Application extends javax.swing.JFrame {
         txtParam.setText("");
         txtQuery.setText("");
     }//GEN-LAST:event_btnClearActionPerformed
+
+    private void isCamelRevActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_isCamelRevActionPerformed
+        // TODO add your handling code here:
+        if(isCamelRev.isSelected()){
+            txtWarning.setText("WARNING: camelCase Reversing could lead to SQL mis-structure!");
+            txtWarning.setVisible(true);
+        } else {
+            txtWarning.setVisible(false);
+        }
+    }//GEN-LAST:event_isCamelRevActionPerformed
 
     /**
      * @param args the command line arguments
@@ -231,14 +260,16 @@ public class Application extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnBuild;
     private javax.swing.JButton btnClear;
+    private javax.swing.JCheckBox isCamelRev;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTextArea txtParam;
     private javax.swing.JTextArea txtQuery;
+    private javax.swing.JLabel txtWarning;
     // End of variables declaration//GEN-END:variables
-    private static void getQuerry(String query, ArrayList<String> listParam) {
+    private static void getQuery(String query, ArrayList<String> listParam) {
         StringTokenizer st = new StringTokenizer(query, "?");
         StringBuilder sb = new StringBuilder();
         int index = 0;
