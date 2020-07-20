@@ -197,6 +197,11 @@ public class Application extends javax.swing.JFrame {
         // TODO add your handling code here:
         String param = txtParam.getText();
         String query = txtQuery.getText();
+        
+        if(query.startsWith("SQLQueryImpl( ")){
+            query = query.substring("SQLQueryImpl( ".length(), query.length() - 1);
+        }
+        
         System.out.println(query);
 
         if (query == null || query.equals("")) {
@@ -228,8 +233,11 @@ public class Application extends javax.swing.JFrame {
         txtQuery.setText(query);
         ArrayList<String> listParam = analysParam(param);
 //        listParam.stream().forEach(System.out::println);
-        getQuery(query, listParam);
-
+        String output = getQuery(query, listParam);
+        
+        StringSelection stringSelection = new StringSelection(SqlFormatter.format(output));
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        clipboard.setContents(stringSelection, null);
         JOptionPane.showMessageDialog(null, "Output has been copied to Clipboard!");
     }//GEN-LAST:event_btnBuildActionPerformed
 
@@ -308,19 +316,24 @@ public class Application extends javax.swing.JFrame {
     private javax.swing.JTextArea txtQuery;
     private javax.swing.JLabel txtWarning;
     // End of variables declaration//GEN-END:variables
-    private static void getQuery(String query, ArrayList<String> listParam) {
+    private static String getQuery(String query, ArrayList<String> listParam) {
+        String output = query;
         StringTokenizer st = new StringTokenizer(query, "?");
-        StringBuilder sb = new StringBuilder();
-        int index = 0;
-        while (st.hasMoreTokens()) {
-            sb.append(st.nextToken() + " ");
-            sb.append(listParam.get(index) + " ");
-            index++;
+        if (listParam.size() > 1) {
+            StringBuilder sb = new StringBuilder();
+            int index = 0;
+            while (st.hasMoreTokens()) {
+                sb.append(st.nextToken() + " ");
+                sb.append(listParam.get(index) + " ");
+                index++;
+            }
+            output = sb.toString();
+        } else {
+            output += ";";
         }
 //        System.out.println(sb.toString());
-        StringSelection stringSelection = new StringSelection(SqlFormatter.format(sb.toString()));
-        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        clipboard.setContents(stringSelection, null);
+return output;
+       
     }
 
     private static ArrayList<String> analysParam(String param) {
