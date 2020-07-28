@@ -13,6 +13,8 @@ import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,6 +35,8 @@ import javax.swing.SwingUtilities;
  */
 public class Application extends javax.swing.JFrame {
 
+    private String buildVersion = "2.1.2";
+
     static String[] arr = {"CREATE", "PRIMARY", "KEY", "INSERT", "VALUES", "INTO", "SELECT", "FROM",
         "ALTER", "ADD", "DISTINCT", "UPDATE", "SET", "DELETE", "TRUNCATE",
         "AS", "ORDER", "BY", "ASC", "DESC", "BETWEEN", "WHERE", "AND", "OR",
@@ -49,7 +53,19 @@ public class Application extends javax.swing.JFrame {
         txtParam.setName("txtParam");
         txtQuery.setName("txtQuery");
         txtWarning.setVisible(false);
+        txtVersion.setText("Build: " + buildVersion);
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+
+        this.addComponentListener(new ComponentAdapter() { //force only resize able by horizontal
+
+            @Override
+            public void componentResized(ComponentEvent e) {
+                setSize(new Dimension(1070, getHeight()));
+                super.componentResized(e);
+            }
+
+        });
+
         this.setLocation(dim.width / 2 - this.getSize().width / 2, dim.height / 2 - this.getSize().height / 2);
     }
 
@@ -72,6 +88,7 @@ public class Application extends javax.swing.JFrame {
         btnClear = new javax.swing.JButton();
         isCamelRev = new javax.swing.JCheckBox();
         txtWarning = new javax.swing.JLabel();
+        txtVersion = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("AssemQuerryTool - ducnm");
@@ -151,15 +168,21 @@ public class Application extends javax.swing.JFrame {
         txtWarning.setForeground(new java.awt.Color(255, 0, 51));
         txtWarning.setText("jLabel1");
 
+        txtVersion.setFont(new java.awt.Font("Dialog", 2, 12)); // NOI18N
+        txtVersion.setForeground(new java.awt.Color(153, 153, 153));
+        txtVersion.setText("jLabel1");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
                     .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addGroup(layout.createSequentialGroup()
+                        .addComponent(txtVersion)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(isCamelRev)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(btnBuild, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE)))
@@ -186,7 +209,8 @@ public class Application extends javax.swing.JFrame {
                     .addComponent(btnBuild)
                     .addComponent(btnClear)
                     .addComponent(isCamelRev)
-                    .addComponent(txtWarning))
+                    .addComponent(txtWarning)
+                    .addComponent(txtVersion))
                 .addContainerGap())
         );
 
@@ -197,13 +221,12 @@ public class Application extends javax.swing.JFrame {
         // TODO add your handling code here:
         String param = txtParam.getText();
         String query = txtQuery.getText();
-        
-        if(query.startsWith("SQLQueryImpl( ")){
+
+        if (query.startsWith("SQLQueryImpl( ")) {
             query = query.substring("SQLQueryImpl( ".length(), query.length() - 1);
         }
-        
-        System.out.println(query);
 
+//        System.out.println(query);
         if (query == null || query.equals("")) {
             JOptionPane.showMessageDialog(null, "Nothing to build!");
             return;
@@ -234,7 +257,7 @@ public class Application extends javax.swing.JFrame {
         ArrayList<String> listParam = analysParam(param);
 //        listParam.stream().forEach(System.out::println);
         String output = getQuery(query, listParam);
-        
+
         StringSelection stringSelection = new StringSelection(SqlFormatter.format(output));
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(stringSelection, null);
@@ -314,6 +337,7 @@ public class Application extends javax.swing.JFrame {
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JTextArea txtParam;
     private javax.swing.JTextArea txtQuery;
+    private javax.swing.JLabel txtVersion;
     private javax.swing.JLabel txtWarning;
     // End of variables declaration//GEN-END:variables
     private static String getQuery(String query, ArrayList<String> listParam) {
@@ -332,8 +356,8 @@ public class Application extends javax.swing.JFrame {
             output += ";";
         }
 //        System.out.println(sb.toString());
-return output;
-       
+        return output;
+
     }
 
     private static ArrayList<String> analysParam(String param) {
@@ -367,9 +391,15 @@ return output;
                 st2.nextToken();
                 st2.nextToken();
                 st2.nextToken();
-                st2 = new StringTokenizer(st2.nextToken(), "\"");
-                //TO_DATE('2003/07/09', 'yyyy/mm/dd')
-                listParam.add("TO_DATE('" + st2.nextToken() + "', 'yyyy-mm-dd')");
+                String _hours = st2.nextToken();
+                String _minutes = st2.nextToken();
+
+                StringTokenizer hours = new StringTokenizer(_hours, "\"");
+                StringTokenizer minutes = new StringTokenizer(_minutes, "\"");
+                //TO_DATE('1998-DEC-25 17:30','YYYY-MON-DD HH24:MI','NLS_DATE_LANGUAGE=AMERICAN')
+                String output = "TO_DATE('" + hours.nextToken() + " " + minutes.nextToken().substring(0, 8) + "', 'YYYY-MM-DD HH24:MI:SS')";
+                listParam.add(output);
+//                listParam.add("TO_DATE('" + hours.nextToken() + "', 'yyyy-mm-dd')");
             } else {
                 StringTokenizer st2 = new StringTokenizer(current, " ");
                 st2.nextToken();
