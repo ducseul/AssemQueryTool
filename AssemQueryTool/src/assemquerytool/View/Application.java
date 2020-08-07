@@ -3,8 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package assemquerytool;
+package assemquerytool.View;
 
+import Utility.Constrain;
+import Utility.Utilities;
 import com.github.vertical_blank.sqlformatter.SqlFormatter;
 import java.awt.Dimension;
 import java.awt.Toolkit;
@@ -33,38 +35,31 @@ import javax.swing.SwingUtilities;
  */
 public class Application extends javax.swing.JFrame {
 
+    Utilities utilities;
+
     private final String buildVersion = "2.1.5 - Updated 07-08-2020";
 
-    static String[] arr = {"CREATE", "PRIMARY", "KEY", "INSERT", "VALUES", "INTO", "SELECT", "FROM",
-        "ALTER", "ADD", "DISTINCT", "UPDATE", "SET", "DELETE", "TRUNCATE",
-        "AS", "ORDER", "BY", "ASC", "DESC", "BETWEEN", "WHERE", "AND", "OR",
-        "NOT", "LIMIT", "IS", "NULL", "DROP", "COLUMN", "DATABASE", "TABLE",
-        "GROUP", "HAVING", "IN", "ON", "JOIN", "UNION", "ALL", "EXISTS", "LIKE", "CASE", "LEFT", "RIGHT"};
-    
     static Set<String> keyword;
 
     /**
      * Creates new form Application
      */
     public Application() {
-        keyword = new HashSet<>(Arrays.asList(arr));
+        keyword = new HashSet<>(Arrays.asList(Constrain.MESSAGE.listKeyword));
         initComponents();
+        utilities = new Utilities();
         txtParam.setName("txtParam");
         txtQuery.setName("txtQuery");
         txtWarning.setVisible(false);
         txtVersion.setText("Build: " + buildVersion);
-        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-
         this.addComponentListener(new ComponentAdapter() { //force only resize able by horizontal
-
             @Override
             public void componentResized(ComponentEvent e) {
                 setSize(new Dimension(1070, getHeight()));
                 super.componentResized(e);
             }
-
         });
-
+        Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
         this.setLocation(dim.width / 2 - this.getSize().width / 2, dim.height / 2 - this.getSize().height / 2);
     }
 
@@ -221,13 +216,13 @@ public class Application extends javax.swing.JFrame {
         String param = txtParam.getText();
         String query = txtQuery.getText();
 
-        if (query.toLowerCase().startsWith("SQLQueryImpl(".toLowerCase()) ) {
+        if (query.toLowerCase().startsWith("SQLQueryImpl(".toLowerCase())) {
             query = query.substring("SQLQueryImpl(".length(), query.length() - 1);
         }
 
 //        System.out.println(query);
         if (query == null || query.equals("")) {
-            JOptionPane.showMessageDialog(null, "Nothing to build!");
+            JOptionPane.showMessageDialog(null, Constrain.MESSAGE.noQueryWarning);
             return;
         }
 
@@ -253,14 +248,23 @@ public class Application extends javax.swing.JFrame {
 //        System.out.println(filter.toString());
         query = SqlFormatter.format(filter.toString());
         txtQuery.setText(query);
-        ArrayList<String> listParam = analysParam(param);
+        ArrayList<String> listParam = utilities.analysParam(param);
 //        listParam.stream().forEach(System.out::println);
-        String output = assembleQuery(query, listParam);
+        String output = utilities.assembleQuery(query, listParam);
 
-        StringSelection stringSelection = new StringSelection(SqlFormatter.format(output));
-        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-        clipboard.setContents(stringSelection, null);
-        JOptionPane.showMessageDialog(null, "Output has been copied to Clipboard!");
+        if (output.contains("?")) {
+            int reply = JOptionPane.showConfirmDialog(null, Constrain.MESSAGE.notCompleteSQL, 
+                    "Warning", JOptionPane.YES_NO_OPTION);
+            if (reply == JOptionPane.YES_OPTION) {
+                DialogManualMatching matching = new DialogManualMatching(this, true, output);
+                matching.setVisible(true);
+            } else {
+                utilities.copyToClipboard(output);
+            }
+        } else {
+            utilities.copyToClipboard(output);
+        }
+
     }//GEN-LAST:event_btnBuildActionPerformed
 
     private void btnClearActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnClearActionPerformed
@@ -272,7 +276,7 @@ public class Application extends javax.swing.JFrame {
     private void isCamelRevActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_isCamelRevActionPerformed
         // TODO add your handling code here:
         if (isCamelRev.isSelected()) {
-            txtWarning.setText("WARNING: camelCase Reversing could lead to SQL mis-structure!");
+            txtWarning.setText(Constrain.MESSAGE.camelWarning);
             txtWarning.setVisible(true);
         } else {
             txtWarning.setVisible(false);
@@ -339,78 +343,6 @@ public class Application extends javax.swing.JFrame {
     private javax.swing.JLabel txtVersion;
     private javax.swing.JLabel txtWarning;
     // End of variables declaration//GEN-END:variables
-    private static String assembleQuery(String query, ArrayList<String> listParam) {
-        String output = query;
-        StringTokenizer st = new StringTokenizer(query, "?");
-        if (listParam.size() > 1) {
-            StringBuilder sb = new StringBuilder();
-            int index = 0;
-            while (st.hasMoreTokens()) {
-                sb.append(st.nextToken() + " ");
-                sb.append(listParam.get(index) + " ");
-                index++;
-            }
-            output = sb.toString();
-        } else {
-            output += ";";
-        }
-//        System.out.println(sb.toString());
-        return output;
-
-    }
-
-    private static ArrayList<String> analysParam(String param) {
-        ArrayList<String> listParam = new ArrayList<>();
-        StringTokenizer st = new StringTokenizer(param, "\n");
-        while (st.hasMoreTokens()) {
-            String current = st.nextToken();
-            if (current.contains("Long") || current.contains("Integer")) {
-                StringTokenizer st2 = new StringTokenizer(current, " ");
-                st2.nextToken();
-                st2.nextToken();
-                st2.nextToken();
-                listParam.add(st2.nextToken());
-            } else if (current.contains("Date")) {
-                StringTokenizer st2 = new StringTokenizer(current, " ");
-                st2.nextToken();
-                st2.nextToken();
-                st2.nextToken();
-                StringBuilder sb = new StringBuilder();
-                st2.nextToken();
-                String tmp2 = st2.nextToken() + "/" + st2.nextToken();
-                st2.nextToken();
-                st2.nextToken();
-                tmp2 += "/" + st2.nextToken();
-                st2 = new StringTokenizer(tmp2, "\"");
-                String tmp = "TO_DATE('" + st2.nextToken() + "','MON-DD-YYYY')";
-                sb.append(tmp + " ");
-                listParam.add(sb.toString());
-            } else if (current.contains("Timestamp")) {
-                StringTokenizer st2 = new StringTokenizer(current, " ");
-                st2.nextToken();
-                st2.nextToken();
-                st2.nextToken();
-                String _hours = st2.nextToken();
-                String _minutes = st2.nextToken();
-
-                StringTokenizer hours = new StringTokenizer(_hours, "\"");
-                StringTokenizer minutes = new StringTokenizer(_minutes, "\"");
-                //TO_DATE('1998-DEC-25 17:30','YYYY-MON-DD HH24:MI','NLS_DATE_LANGUAGE=AMERICAN')
-                String output = "TO_DATE('" + hours.nextToken() + " " + minutes.nextToken().substring(0, 8) + "', 'YYYY-MM-DD HH24:MI:SS')";
-                listParam.add(output);
-//                listParam.add("TO_DATE('" + hours.nextToken() + "', 'yyyy-mm-dd')");
-            } else {
-                StringTokenizer st2 = new StringTokenizer(current, " ");
-                st2.nextToken();
-                st2.nextToken();
-                String tmp = st2.nextToken();
-                st2 = new StringTokenizer(tmp, "\"");
-                listParam.add("'" + st2.nextToken() + "'");
-            }
-        }
-        listParam.add(";");
-        return listParam;
-    }
 
     private static boolean isSqlKeywords(String param) {
         return keyword.contains(param.toUpperCase().trim());
@@ -434,5 +366,9 @@ public class Application extends javax.swing.JFrame {
         } catch (UnsupportedFlavorException | IOException ex) {
             Logger.getLogger(Application.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+    
+    public void doMergeManual(String result){
+        utilities.copyToClipboard(result);
     }
 }

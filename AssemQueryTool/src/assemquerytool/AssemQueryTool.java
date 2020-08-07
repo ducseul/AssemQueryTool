@@ -5,6 +5,8 @@
  */
 package assemquerytool;
 
+import assemquerytool.View.Application;
+
 /**
  *
  * @author bug
