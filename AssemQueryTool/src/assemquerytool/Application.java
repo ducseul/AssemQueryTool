@@ -33,13 +33,14 @@ import javax.swing.SwingUtilities;
  */
 public class Application extends javax.swing.JFrame {
 
-    private String buildVersion = "2.1.2";
+    private final String buildVersion = "2.1.5 - Updated 07-08-2020";
 
     static String[] arr = {"CREATE", "PRIMARY", "KEY", "INSERT", "VALUES", "INTO", "SELECT", "FROM",
         "ALTER", "ADD", "DISTINCT", "UPDATE", "SET", "DELETE", "TRUNCATE",
         "AS", "ORDER", "BY", "ASC", "DESC", "BETWEEN", "WHERE", "AND", "OR",
         "NOT", "LIMIT", "IS", "NULL", "DROP", "COLUMN", "DATABASE", "TABLE",
         "GROUP", "HAVING", "IN", "ON", "JOIN", "UNION", "ALL", "EXISTS", "LIKE", "CASE", "LEFT", "RIGHT"};
+    
     static Set<String> keyword;
 
     /**
@@ -220,8 +221,8 @@ public class Application extends javax.swing.JFrame {
         String param = txtParam.getText();
         String query = txtQuery.getText();
 
-        if (query.startsWith("SQLQueryImpl( ")) {
-            query = query.substring("SQLQueryImpl( ".length(), query.length() - 1);
+        if (query.toLowerCase().startsWith("SQLQueryImpl(".toLowerCase()) ) {
+            query = query.substring("SQLQueryImpl(".length(), query.length() - 1);
         }
 
 //        System.out.println(query);
@@ -254,7 +255,7 @@ public class Application extends javax.swing.JFrame {
         txtQuery.setText(query);
         ArrayList<String> listParam = analysParam(param);
 //        listParam.stream().forEach(System.out::println);
-        String output = getQuery(query, listParam);
+        String output = assembleQuery(query, listParam);
 
         StringSelection stringSelection = new StringSelection(SqlFormatter.format(output));
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -338,7 +339,7 @@ public class Application extends javax.swing.JFrame {
     private javax.swing.JLabel txtVersion;
     private javax.swing.JLabel txtWarning;
     // End of variables declaration//GEN-END:variables
-    private static String getQuery(String query, ArrayList<String> listParam) {
+    private static String assembleQuery(String query, ArrayList<String> listParam) {
         String output = query;
         StringTokenizer st = new StringTokenizer(query, "?");
         if (listParam.size() > 1) {
