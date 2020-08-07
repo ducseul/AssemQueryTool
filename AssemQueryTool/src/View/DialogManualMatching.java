@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package assemquerytool.View;
+package View;
 
 import Utility.Utilities;
 import java.awt.Dimension;

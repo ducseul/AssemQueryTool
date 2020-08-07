@@ -5,7 +5,7 @@
  */
 package assemquerytool;
 
-import assemquerytool.View.Application;
+import View.Application;
 
 /**
  *
