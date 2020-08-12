@@ -6,8 +6,25 @@
 package View;
 
 import Utility.Utilities;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Toolkit;
+import java.util.StringTokenizer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javafx.util.Pair;
+import javax.swing.JTextArea;
+import javax.swing.JTextPane;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.Element;
+import javax.swing.text.Style;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyleContext;
+import javax.swing.text.StyledDocument;
 
 /**
  *
@@ -18,6 +35,8 @@ public class DialogManualMatching extends javax.swing.JDialog {
     Application parent;
     Utilities utilities;
     String query;
+    int oldStart = 0;
+    int oldEnd = 0;
 
     /**
      * Creates new form DialogManualMatching
@@ -27,9 +46,14 @@ public class DialogManualMatching extends javax.swing.JDialog {
         this.parent = (Application) parent;
         this.query = query;
         initComponents();
+        initEditor(query);
         utilities = new Utilities();
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
         this.setLocation(dim.width / 2 - this.getSize().width / 2, dim.height / 2 - this.getSize().height / 2);
+
+//        int countParam = utilities.countParam(query);
+//        System.out.println("total " + countParam);
+//        this.parent.doMergeManual("result");
     }
 
     public DialogManualMatching(java.awt.Frame parent, boolean modal) {
@@ -47,6 +71,8 @@ public class DialogManualMatching extends javax.swing.JDialog {
     private void initComponents() {
 
         btnSave = new javax.swing.JButton();
+        jsp = new javax.swing.JScrollPane();
+        textArea = new javax.swing.JTextPane();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -57,21 +83,29 @@ public class DialogManualMatching extends javax.swing.JDialog {
             }
         });
 
+        jsp.setViewportView(textArea);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(336, Short.MAX_VALUE)
-                .addComponent(btnSave)
+                .addContainerGap()
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(0, 380, Short.MAX_VALUE)
+                        .addComponent(btnSave))
+                    .addComponent(jsp))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(262, Short.MAX_VALUE)
+                .addContainerGap()
+                .addComponent(jsp, javax.swing.GroupLayout.PREFERRED_SIZE, 457, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(btnSave)
-                .addContainerGap())
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         pack();
@@ -79,9 +113,8 @@ public class DialogManualMatching extends javax.swing.JDialog {
 
     private void btnSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSaveActionPerformed
         // TODO add your handling code here:
-        int countParam = utilities.countParam(query);
-        System.out.println("total " + countParam);
-        parent.doMergeManual("result");
+        this.parent.doMergeManual(textArea.getText());
+        this.dispose();
     }//GEN-LAST:event_btnSaveActionPerformed
 
     /**
@@ -128,5 +161,124 @@ public class DialogManualMatching extends javax.swing.JDialog {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnSave;
+    private javax.swing.JScrollPane jsp;
+    private javax.swing.JTextPane textArea;
     // End of variables declaration//GEN-END:variables
+
+    private void initEditor(String sql) {
+        setTitle("SQL Editor Lite");
+        
+        textArea = new JTextPane(getRealtimeDocumentStyle());
+        String lineIndex = "";
+        StringTokenizer st = new StringTokenizer(sql, "\n");
+        for (int i = 0; i < st.countTokens() + 1; i++) {
+            lineIndex += (i + 1) + System.getProperty("line.separator");
+        }
+
+        coloringCode(sql);
+        JTextArea lines = new JTextArea(lineIndex);
+        lines.setBackground(Color.LIGHT_GRAY);
+        lines.setEditable(false);
+        //  Code to implement line numbers inside the JTextArea
+        textArea.getDocument().addDocumentListener(new DocumentListener() {
+            public String getText() {
+                int caretPosition = textArea.getDocument().getLength();
+                Element root = textArea.getDocument().getDefaultRootElement();
+                String text = "1" + System.getProperty("line.separator");
+                for (int i = 2; i < root.getElementIndex(caretPosition) + 2; i++) {
+                    text += i + System.getProperty("line.separator");
+                }
+                return text;
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent de) {
+                lines.setText(getText());
+                System.out.println("updated");
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent de) {
+                lines.setText(getText());
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent de) {
+                lines.setText(getText());
+            }
+
+        });
+        jsp.getViewport().add(textArea);
+        jsp.setRowHeaderView(lines);
+        setLocationRelativeTo(null);
+    }
+
+    private void coloringCode(String sql) {
+        System.out.println(sql);
+
+        StringTokenizer st = new StringTokenizer(sql, "\n");
+        System.out.println("Count: " + st.countTokens());
+        textArea.setText(st.nextToken() + "\n");
+
+        try {
+            StyledDocument doc = textArea.getStyledDocument();
+            Style style = textArea.addStyle("", null);
+            while (st.hasMoreTokens()) {
+                String current = st.nextToken() + "\n";
+                if (current.contains("?")) {
+                    StyleConstants.setForeground(style, Color.red);
+                    StyleConstants.setBackground(style, Color.green);
+                    doc.insertString(doc.getLength(), current, style);
+                } else {
+                    StyleConstants.setForeground(style, Color.black);
+                    StyleConstants.setBackground(style, Color.white);
+                    doc.insertString(doc.getLength(), current, style);
+                }
+            }
+        } catch (BadLocationException ex) {
+            Logger.getLogger(DialogManualMatching.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    //select * from ? where a =? and b = ?
+
+    private StyledDocument getRealtimeDocumentStyle() {
+        final StyleContext cont = StyleContext.getDefaultStyleContext();
+        final AttributeSet attr = cont.addAttribute(cont.getEmptySet(), StyleConstants.Foreground, Color.yellow);
+        final AttributeSet attrBlack = cont.addAttribute(cont.getEmptySet(), StyleConstants.Foreground, Color.BLUE);
+        DefaultStyledDocument doc = new DefaultStyledDocument() { //Đang làm dở phần đổi màu realtime khi gõ
+            public void insertString (int offset, String str, AttributeSet a) throws BadLocationException {
+                super.insertString(offset, str, a);
+                setCharacterAttributes(oldStart, oldEnd - oldStart, attr, false);
+                Pair<Integer, Integer> rowBoudary = getRowBoudary(textArea.getText(), textArea.getCaretPosition());
+                oldStart = rowBoudary.getKey();
+                oldEnd = rowBoudary.getValue();
+                setCharacterAttributes(oldStart, oldEnd - oldStart, attr, false);
+                System.out.println(textArea.getCaretPosition());
+//                setCharacterAttributes(12, 32 , attr, false);
+            }
+
+            public void remove (int offs, int len) throws BadLocationException {
+                super.remove(offs, len);
+//                setCharacterAttributes(12, 32 , attr, false);
+            }
+        };
+        return doc;
+    }
+    
+    public Pair<Integer, Integer> getRowBoudary(String sql, int position){
+        int start =  0;
+        int end = 0;
+        
+        StringTokenizer st = new StringTokenizer(sql, "\n");
+        while(st.hasMoreTokens()){
+            String tmp = st.nextToken();
+            end += tmp.length();
+            start = end - tmp.length();
+            if (start < position && end > position){
+                return new Pair<>(start, end);
+            }
+        }
+        return new Pair<>(0, 0);
+    }
+    
 }

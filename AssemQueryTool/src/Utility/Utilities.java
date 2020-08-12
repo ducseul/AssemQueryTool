@@ -32,11 +32,32 @@ public class Utilities {
             }
             output = sb.toString();
         } else {
-            output += ";";
+            if (!output.endsWith(";")) {
+                output += ";";
+            }
         }
 //        System.out.println(sb.toString());
         return output;
 
+    }
+
+    public int findLastNonWordChar(String text, int index) {
+        while (--index >= 0) {
+            if (String.valueOf(text.charAt(index)).matches("\\W")) {
+                break;
+            }
+        }
+        return index;
+    }
+
+    public int findFirstNonWordChar(String text, int index) {
+        while (index < text.length()) {
+            if (String.valueOf(text.charAt(index)).matches("\\W")) {
+                break;
+            }
+            index++;
+        }
+        return index;
     }
 
     public void copyToClipboard(String sql) {

@@ -5,6 +5,10 @@
  */
 package Utility;
 
+import java.awt.Color;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.StyleConstants;
+
 /**
  *
  * @author bug
