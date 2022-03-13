@@ -18,6 +18,8 @@ import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -33,14 +35,15 @@ import javax.swing.SwingUtilities;
  */
 public class Application extends javax.swing.JFrame {
 
-    private final String buildVersion = "2.1.5 - Updated 07-08-2020";
+    private final String buildVersion = "3.1.2 - Updated 07-03-2022";
+    private Boolean historyFlag = false;
 
     static String[] arr = {"CREATE", "PRIMARY", "KEY", "INSERT", "VALUES", "INTO", "SELECT", "FROM",
         "ALTER", "ADD", "DISTINCT", "UPDATE", "SET", "DELETE", "TRUNCATE",
         "AS", "ORDER", "BY", "ASC", "DESC", "BETWEEN", "WHERE", "AND", "OR",
         "NOT", "LIMIT", "IS", "NULL", "DROP", "COLUMN", "DATABASE", "TABLE",
         "GROUP", "HAVING", "IN", "ON", "JOIN", "UNION", "ALL", "EXISTS", "LIKE", "CASE", "LEFT", "RIGHT"};
-    
+
     static Set<String> keyword;
 
     /**
@@ -88,6 +91,7 @@ public class Application extends javax.swing.JFrame {
         isCamelRev = new javax.swing.JCheckBox();
         txtWarning = new javax.swing.JLabel();
         txtVersion = new javax.swing.JLabel();
+        btnHistory = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("AssemQuerryTool - ducnm");
@@ -171,6 +175,13 @@ public class Application extends javax.swing.JFrame {
         txtVersion.setForeground(new java.awt.Color(153, 153, 153));
         txtVersion.setText("jLabel1");
 
+        btnHistory.setText("History");
+        btnHistory.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnHistoryActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -192,6 +203,8 @@ public class Application extends javax.swing.JFrame {
                         .addGap(0, 0, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addComponent(btnClear, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(btnHistory)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(txtWarning)))
                 .addContainerGap())
@@ -209,7 +222,8 @@ public class Application extends javax.swing.JFrame {
                     .addComponent(btnClear)
                     .addComponent(isCamelRev)
                     .addComponent(txtWarning)
-                    .addComponent(txtVersion))
+                    .addComponent(txtVersion)
+                    .addComponent(btnHistory))
                 .addContainerGap())
         );
 
@@ -221,7 +235,7 @@ public class Application extends javax.swing.JFrame {
         String param = txtParam.getText();
         String query = txtQuery.getText();
 
-        if (query.toLowerCase().startsWith("SQLQueryImpl(".toLowerCase()) ) {
+        if (query.toLowerCase().startsWith("SQLQueryImpl(".toLowerCase())) {
             query = query.substring("SQLQueryImpl(".length(), query.length() - 1);
         }
 
@@ -253,6 +267,11 @@ public class Application extends javax.swing.JFrame {
 //        System.out.println(filter.toString());
         query = SqlFormatter.format(filter.toString());
         txtQuery.setText(query);
+        QueryBlock queryBlock = new QueryBlock()
+                .setParams(txtParam.getText())
+                .setQuery(query)
+                .setTimestamp(new Date());
+        History.getInstance().put(queryBlock.getTimestamp(), queryBlock);
         ArrayList<String> listParam = analysParam(param);
 //        listParam.stream().forEach(System.out::println);
         String output = assembleQuery(query, listParam);
@@ -260,6 +279,11 @@ public class Application extends javax.swing.JFrame {
         StringSelection stringSelection = new StringSelection(SqlFormatter.format(output));
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(stringSelection, null);
+        
+        if(historyFlag ==false){
+            historyFlag = true;
+            btnHistory.setEnabled(true);
+        }        
         JOptionPane.showMessageDialog(null, "Output has been copied to Clipboard!");
     }//GEN-LAST:event_btnBuildActionPerformed
 
@@ -290,6 +314,12 @@ public class Application extends javax.swing.JFrame {
         // TODO add your handling code here:
         doPasteClipBoard(evt);
     }//GEN-LAST:event_txtQueryMousePressed
+
+    private void btnHistoryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnHistoryActionPerformed
+        // TODO add your handling code here:
+        HistorySelector historySelector = new HistorySelector(this, true);
+        historySelector.setVisible(true);
+    }//GEN-LAST:event_btnHistoryActionPerformed
 
     /**
      * @param args the command line arguments
@@ -329,6 +359,7 @@ public class Application extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnBuild;
     private javax.swing.JButton btnClear;
+    private javax.swing.JButton btnHistory;
     private javax.swing.JCheckBox isCamelRev;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
@@ -341,18 +372,24 @@ public class Application extends javax.swing.JFrame {
     // End of variables declaration//GEN-END:variables
     private static String assembleQuery(String query, ArrayList<String> listParam) {
         String output = query;
-        StringTokenizer st = new StringTokenizer(query, "?");
-        if (listParam.size() > 1) {
-            StringBuilder sb = new StringBuilder();
-            int index = 0;
-            while (st.hasMoreTokens()) {
-                sb.append(st.nextToken() + " ");
-                sb.append(listParam.get(index) + " ");
-                index++;
+        try {
+            StringTokenizer st = new StringTokenizer(query, "?");
+            if (listParam.size() > 1) {
+                StringBuilder sb = new StringBuilder();
+                int index = 0;
+                while (st.hasMoreTokens()) {
+                    sb.append(st.nextToken() + " ");
+                    sb.append(listParam.get(index) + " ");
+                    index++;
+                }
+                output = sb.toString();
+            } else {
+                if(!output.endsWith(";")){
+                    output += ";";
+                }
             }
-            output = sb.toString();
-        } else {
-            output += ";";
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
 //        System.out.println(sb.toString());
         return output;
@@ -371,20 +408,48 @@ public class Application extends javax.swing.JFrame {
                 st2.nextToken();
                 listParam.add(st2.nextToken());
             } else if (current.contains("Date")) {
-                StringTokenizer st2 = new StringTokenizer(current, " ");
-                st2.nextToken();
-                st2.nextToken();
-                st2.nextToken();
-                StringBuilder sb = new StringBuilder();
-                st2.nextToken();
-                String tmp2 = st2.nextToken() + "/" + st2.nextToken();
-                st2.nextToken();
-                st2.nextToken();
-                tmp2 += "/" + st2.nextToken();
-                st2 = new StringTokenizer(tmp2, "\"");
-                String tmp = "TO_DATE('" + st2.nextToken() + "','MON-DD-YYYY')";
-                sb.append(tmp + " ");
-                listParam.add(sb.toString());
+                try {
+                    StringTokenizer st2 = new StringTokenizer(current, " ");
+                    st2.nextToken();
+                    st2.nextToken();
+                    st2.nextToken();
+                    StringBuilder sb = new StringBuilder();
+                    String nextToken = st2.nextToken();
+                    if (st2.hasMoreTokens()) {
+                        String tmp2 = st2.nextToken() + "/" + st2.nextToken();
+                        st2.nextToken();
+                        st2.nextToken();
+                        tmp2 += "/" + st2.nextToken();
+                        st2 = new StringTokenizer(tmp2, "\"");
+                        String tmp = st2.nextToken();
+                        if (tmp.matches("[0-9]{4}[-][0-9]{2}[-][0-9]{2}")) {
+                            tmp = "TO_DATE('" + tmp + "','YYYY-MM-DD')";
+                            sb.append(tmp + " ");
+                            listParam.add(sb.toString());
+                        } else if (tmp.matches("[A-Z][a-z]{2}[/][0-9]{2}[/][0-9]{4}")) {
+                            tmp = "TO_DATE('" + tmp + "','Mon/DD/YYYY')";
+                            sb.append(tmp + " ");
+                            listParam.add(sb.toString());
+                        } else {
+                            tmp = "TO_DATE('" + st2.nextToken() + "','YYYY-MM-DD')";
+                            sb.append(tmp + " ");
+                            listParam.add(sb.toString());
+                        }
+                    } else {
+                        if (nextToken.split("\"")[1].matches("[0-9]{4}[-][0-9]{2}[-][0-9]{2}")) {
+                            String tmp = "TO_DATE('" + nextToken.split("\"")[1] + "','YYYY-MM-DD')";
+                            sb.append(tmp + " ");
+                            listParam.add(sb.toString());
+                        } else if (nextToken.split("\"")[1].matches("[A-Z][a-z]{2}[/][0-9]{2}[/][0-9]{4}")) {
+                            String tmp = "TO_DATE('" + nextToken.split("\"")[1] + "','Mon/DD/YYYY')";
+                            sb.append(tmp + " ");
+                            listParam.add(sb.toString());
+                        }
+                    }
+
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             } else if (current.contains("Timestamp")) {
                 StringTokenizer st2 = new StringTokenizer(current, " ");
                 st2.nextToken();
@@ -408,7 +473,9 @@ public class Application extends javax.swing.JFrame {
                 listParam.add("'" + st2.nextToken() + "'");
             }
         }
-        listParam.add(";");
+
+        listParam.add(
+                ";");
         return listParam;
     }
 
@@ -428,11 +495,18 @@ public class Application extends javax.swing.JFrame {
                     txtParam.setText(clipBoard);
                 } else if ("txtQuery".equals(name)) {
                     txtQuery.setText(clipBoard);
+
                 }
             }
 //            System.out.println("Source: "+((JTextArea)evt.getSource()).getName());
         } catch (UnsupportedFlavorException | IOException ex) {
-            Logger.getLogger(Application.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(Application.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
+    }
+    
+    public void callBackOnSelected(QueryBlock queryBlock){
+        this.txtParam.setText(queryBlock.getParams());
+        this.txtQuery.setText(queryBlock.getQuery());
     }
 }
