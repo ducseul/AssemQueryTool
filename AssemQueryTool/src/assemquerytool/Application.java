@@ -35,7 +35,7 @@ import javax.swing.SwingUtilities;
  */
 public class Application extends javax.swing.JFrame {
 
-    private final String buildVersion = "3.1.2 - Updated 07-03-2022";
+    private final String BUILD_VERSION = "4.1.1 - Updated 03-08-2023";
     private Boolean historyFlag = false;
 
     static String[] arr = {"CREATE", "PRIMARY", "KEY", "INSERT", "VALUES", "INTO", "SELECT", "FROM",
@@ -45,6 +45,7 @@ public class Application extends javax.swing.JFrame {
         "GROUP", "HAVING", "IN", "ON", "JOIN", "UNION", "ALL", "EXISTS", "LIKE", "CASE", "LEFT", "RIGHT"};
 
     static Set<String> keyword;
+    private static HashMap<String, String> lstNamedParameter = null;
 
     /**
      * Creates new form Application
@@ -55,7 +56,7 @@ public class Application extends javax.swing.JFrame {
         txtParam.setName("txtParam");
         txtQuery.setName("txtQuery");
         txtWarning.setVisible(false);
-        txtVersion.setText("Build: " + buildVersion);
+        txtVersion.setText("Build: " + BUILD_VERSION);
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
 
         this.addComponentListener(new ComponentAdapter() { //force only resize able by horizontal
@@ -117,7 +118,7 @@ public class Application extends javax.swing.JFrame {
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jPanel1Layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 410, Short.MAX_VALUE))
+                .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 388, Short.MAX_VALUE))
         );
 
         jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder("Query Sentence"));
@@ -176,6 +177,7 @@ public class Application extends javax.swing.JFrame {
         txtVersion.setText("jLabel1");
 
         btnHistory.setText("History");
+        btnHistory.setEnabled(false);
         btnHistory.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnHistoryActionPerformed(evt);
@@ -186,27 +188,27 @@ public class Application extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+            .addGroup(layout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                    .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(txtVersion)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(isCamelRev)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnBuild, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addGroup(layout.createSequentialGroup()
-                        .addComponent(btnClear, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
+                            .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(txtVersion)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(isCamelRev)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(btnBuild, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE)))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(btnHistory)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(txtWarning)))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(btnClear, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(btnHistory)))
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addComponent(txtWarning, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
@@ -221,10 +223,11 @@ public class Application extends javax.swing.JFrame {
                     .addComponent(btnBuild)
                     .addComponent(btnClear)
                     .addComponent(isCamelRev)
-                    .addComponent(txtWarning)
                     .addComponent(txtVersion)
                     .addComponent(btnHistory))
-                .addContainerGap())
+                .addGap(5, 5, 5)
+                .addComponent(txtWarning, javax.swing.GroupLayout.DEFAULT_SIZE, 20, Short.MAX_VALUE)
+                .addGap(5, 5, 5))
         );
 
         pack();
@@ -239,6 +242,10 @@ public class Application extends javax.swing.JFrame {
             query = query.substring("SQLQueryImpl(".length(), query.length() - 1);
         }
 
+        if (query.toLowerCase().startsWith("\"")) {
+            query = query.substring(1, query.length() - 1);
+        }
+
 //        System.out.println(query);
         if (query == null || query.equals("")) {
             JOptionPane.showMessageDialog(null, "Nothing to build!");
@@ -250,7 +257,7 @@ public class Application extends javax.swing.JFrame {
         while (st.hasMoreTokens()) {
             String str = st.nextToken();
             if (isCamelRev.isSelected()) {
-                if (!isSqlKeywords(str)) {
+                if (!isSqlKeywords(str) && !str.contains(":")) {
                     StringBuilder sb = new StringBuilder(str);
                     for (int i = 1; i < str.length(); i++) {
                         if (Character.isUpperCase(str.charAt(i))
@@ -264,8 +271,12 @@ public class Application extends javax.swing.JFrame {
 //            System.out.println(str);
             filter.append(isSqlKeywords(str) ? str.toUpperCase() + " " : str + " ");
         }
-//        System.out.println(filter.toString());
-        query = SqlFormatter.format(filter.toString());
+//        System.out.println(filter.toString());    
+        try {
+            query = SqlFormatter.format(filter.toString());
+        } catch (java.lang.NoClassDefFoundError er) {
+            txtWarning.setText("Oops! Please place sql-formatter-1.0.1.jar inside lib folder for formatting feature.");
+        }
         txtQuery.setText(query);
         QueryBlock queryBlock = new QueryBlock()
                 .setParams(txtParam.getText())
@@ -275,15 +286,24 @@ public class Application extends javax.swing.JFrame {
         ArrayList<String> listParam = analysParam(param);
 //        listParam.stream().forEach(System.out::println);
         String output = assembleQuery(query, listParam);
-
-        StringSelection stringSelection = new StringSelection(SqlFormatter.format(output));
+        if (lstNamedParameter != null) {
+            output = assemNamedParameters(output);
+        }
+        
+        StringSelection stringSelection = new StringSelection(output);
+        try {
+            stringSelection = new StringSelection(SqlFormatter.format(output));
+        } catch (java.lang.NoClassDefFoundError er) {
+            txtWarning.setText("Oops! Please place sql-formatter-1.0.1.jar inside lib folder for formatting feature.");
+            txtWarning.setVisible(true);
+        }
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(stringSelection, null);
-        
-        if(historyFlag ==false){
+
+        if (historyFlag == false) {
             historyFlag = true;
             btnHistory.setEnabled(true);
-        }        
+        }
         JOptionPane.showMessageDialog(null, "Output has been copied to Clipboard!");
     }//GEN-LAST:event_btnBuildActionPerformed
 
@@ -384,7 +404,7 @@ public class Application extends javax.swing.JFrame {
                 }
                 output = sb.toString();
             } else {
-                if(!output.endsWith(";")){
+                if (!output.endsWith(";")) {
                     output += ";";
                 }
             }
@@ -401,12 +421,17 @@ public class Application extends javax.swing.JFrame {
         StringTokenizer st = new StringTokenizer(param, "\n");
         while (st.hasMoreTokens()) {
             String current = st.nextToken();
-            if (current.contains("Long") || current.contains("Integer")) {
-                StringTokenizer st2 = new StringTokenizer(current, " ");
-                st2.nextToken();
-                st2.nextToken();
-                st2.nextToken();
-                listParam.add(st2.nextToken());
+            if (current.contains("Long") || current.contains("Integer") || current.contains("Double")) {
+                try {
+                    System.out.println("Parsing number token: " + current);
+                    StringTokenizer st2 = new StringTokenizer(current, " ");
+                    st2.nextToken();
+                    st2.nextToken();
+                    st2.nextToken();
+                    listParam.add(st2.nextToken());
+                } catch (Exception ex) {
+                    System.out.println("Parsing number token fail: " + current);
+                }
             } else if (current.contains("Date")) {
                 try {
                     StringTokenizer st2 = new StringTokenizer(current, " ");
@@ -463,7 +488,29 @@ public class Application extends javax.swing.JFrame {
                 //TO_DATE('1998-DEC-25 17:30','YYYY-MON-DD HH24:MI','NLS_DATE_LANGUAGE=AMERICAN')
                 String output = "TO_DATE('" + hours.nextToken() + " " + minutes.nextToken().substring(0, 8) + "', 'YYYY-MM-DD HH24:MI:SS')";
                 listParam.add(output);
-//                listParam.add("TO_DATE('" + hours.nextToken() + "', 'yyyy-mm-dd')");
+                //listParam.add("TO_DATE('" + hours.nextToken() + "', 'yyyy-mm-dd')");
+            } else if (current.contains("Constants")) {
+                try {
+                    System.out.println("Parsing constant token: " + current);
+                    StringTokenizer st2 = new StringTokenizer(current, " ");
+                    st2.nextToken();
+                    st2.nextToken();
+                    st2.nextToken();
+                    String output = st2.nextToken();
+                    listParam.add("'" + output.substring(1, output.length() - 1) + "'");
+                } catch (Exception ex) {
+                    System.out.println("Can't parse constant: " + current);
+                }
+            } else if (current.contains("TypedValue@")) {
+                if (lstNamedParameter == null) {
+                    lstNamedParameter = new HashMap<>();
+                }
+                String[] data = current.split("->");
+                try {
+                    lstNamedParameter.put(data[0].replace("\"", ""), data[1].split("} ")[1].replace("\"", ""));
+                } catch (Exception ignore) {
+
+                }
             } else {
                 StringTokenizer st2 = new StringTokenizer(current, " ");
                 st2.nextToken();
@@ -474,8 +521,7 @@ public class Application extends javax.swing.JFrame {
             }
         }
 
-        listParam.add(
-                ";");
+        listParam.add(";");
         return listParam;
     }
 
@@ -504,9 +550,18 @@ public class Application extends javax.swing.JFrame {
                     .getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
-    public void callBackOnSelected(QueryBlock queryBlock){
+
+    public void callBackOnSelected(QueryBlock queryBlock) {
         this.txtParam.setText(queryBlock.getParams());
         this.txtQuery.setText(queryBlock.getQuery());
+    }
+
+    private String assemNamedParameters(String output) {
+        Set<String> lstSet = lstNamedParameter.keySet();
+        for (String keyword : lstSet) {
+            output = output.replaceAll(":" + keyword.trim(), lstNamedParameter.get(keyword));
+        }
+        lstSet.clear();
+        return output;
     }
 }

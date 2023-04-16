@@ -9,7 +9,10 @@ import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GridLayout;
 import java.awt.Toolkit;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -135,7 +138,14 @@ public class HistorySelector extends javax.swing.JDialog {
 
     private void fillData() {
         Set<Date> listKey=  History.getInstance().keySet();
-        for (Date date : listKey) {
+        List<Date> lstDate = new ArrayList<>(listKey);
+        lstDate.sort(new Comparator<Date>(){
+            @Override
+            public int compare(Date o1, Date o2) {
+                return o1.compareTo(o2);
+            }
+        });
+        for (Date date : lstDate) {
             QueryBlock queryBlock = History.getInstance().get(date);
             HistoryComponent hc = new HistoryComponent(this, queryBlock);
             this.dataPanel.add(hc);
