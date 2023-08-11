@@ -5,6 +5,7 @@
  */
 package assemquerytool.GUI;
 
+import assemquerytool.Constants;
 import assemquerytool.entity.History;
 import assemquerytool.entity.QueryBlock;
 import assemquerytool.Utils;
@@ -47,9 +48,6 @@ import javax.swing.SwingUtilities;
  */
 public class Application extends javax.swing.JFrame {
 
-    private final String BUILD_VERSION = "4.2.2 - Updated 08-08-2023";
-    private Boolean historyFlag = false;
-
     static String[] arr = {"CREATE", "PRIMARY", "KEY", "INSERT", "VALUES", "INTO", "SELECT", "FROM",
         "ALTER", "ADD", "DISTINCT", "UPDATE", "SET", "DELETE", "TRUNCATE",
         "AS", "ORDER", "BY", "ASC", "DESC", "BETWEEN", "WHERE", "AND", "OR",
@@ -68,7 +66,7 @@ public class Application extends javax.swing.JFrame {
         txtParam.setName("txtParam");
         txtQuery.setName("txtQuery");
         txtWarning.setVisible(false);
-        txtVersion.setText("Build: " + BUILD_VERSION);
+        txtVersion.setText("Build: " + Constants.BUILD_VERSION);
 
         Font font = txtGitRepo.getFont();
         Map attributes = font.getAttributes();
@@ -287,47 +285,26 @@ public class Application extends javax.swing.JFrame {
             return;
         }
 
-        // Pre-format the query
-        StringTokenizer st = new StringTokenizer(query, " ");
-        StringBuilder filter = new StringBuilder();
-        while (st.hasMoreTokens()) {
-            String str = st.nextToken();
-            if (isCamelRev.isSelected()) {
-                if (!isSqlKeywords(str) && !str.contains(":")) {
-                    StringBuilder sb = new StringBuilder(str);
-                    for (int i = 1; i < str.length(); i++) {
-                        if (Character.isUpperCase(str.charAt(i))
-                                && Character.isLowerCase(str.charAt(i - 1))) {
-                            sb.insert(i, "_");
-                            str = sb.toString();
-                        }
-                    }
-                }
-            }
-            filter.append(isSqlKeywords(str) ? str.toUpperCase() + " " : str + " ");
-        }
-        try {
-            query = SqlFormatter.format(filter.toString());
-        } catch (java.lang.NoClassDefFoundError er) {
-            txtWarning.setText("Oops! Please place sql-formatter-1.0.1.jar inside lib folder for formatting feature.");
+        String output = SqlFormatter.format(query);
+        txtQuery.setText(output);
+
+        // Assem the params to query
+        ArrayList<String> listParam = analysParam(param);
+//        listParam.stream().forEach(System.out::println);
+        output = assembleQuery(query, listParam);
+        if (lstNamedParameter != null) {
+            output = assemNamedParameters(output);
         }
 
+        output = doFormat(output, isCamelRev.isSelected());
         // Create history record
-        txtQuery.setText(query);
         QueryBlock queryBlock = new QueryBlock()
                 .setParams(txtParam.getText())
                 .setQuery(query)
                 .setTimestamp(new Date());
         History.getInstance().put(queryBlock.getTimestamp(), queryBlock);
 
-        // Assem the params to query
-        ArrayList<String> listParam = analysParam(param);
-//        listParam.stream().forEach(System.out::println);
-        String output = assembleQuery(query, listParam);
-        if (lstNamedParameter != null) {
-            output = assemNamedParameters(output);
-        }
-
+        //Copy to clipboard
         StringSelection stringSelection = new StringSelection(output);
         try {
             // Format further using sql-formatter-1.0.1.jar
@@ -336,13 +313,13 @@ public class Application extends javax.swing.JFrame {
             txtWarning.setText("Oops! Please place sql-formatter-1.0.1.jar inside lib folder for formatting feature.");
             txtWarning.setVisible(true);
         }
-        
+
         // Copy to clipboard
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(stringSelection, null);
 
-        if (historyFlag == false) {
-            historyFlag = true;
+        if (Constants.historyFlag == false) {
+            Constants.historyFlag = true;
             btnHistory.setEnabled(true);
         }
         JOptionPane.showMessageDialog(null, "Output has been copied to Clipboard!");
@@ -385,7 +362,7 @@ public class Application extends javax.swing.JFrame {
     private void txtGitRepoMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_txtGitRepoMouseClicked
         try {
             // TODO add your handling code here:
-            openWebpage(new URL("https://github.com/ducseul/AssemQueryTool.git"));
+            openWebpage(new URL(Constants.GIT_URL));
         } catch (MalformedURLException ex) {
             Logger.getLogger(Application.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -487,6 +464,30 @@ public class Application extends javax.swing.JFrame {
 //        System.out.println(sb.toString());
         return output;
 
+    }
+
+    private static String doFormat(String input, boolean isCamelRev) {
+        // Pre-format the query
+        StringTokenizer st = new StringTokenizer(input, " ");
+        StringBuilder filter = new StringBuilder();
+        while (st.hasMoreTokens()) {
+            String str = st.nextToken();
+            if (isCamelRev) {
+                if (!isSqlKeywords(str) && !str.contains(":")) {
+                    StringBuilder sb = new StringBuilder(str);
+                    for (int i = 1; i < str.length(); i++) {
+                        if (Character.isUpperCase(str.charAt(i))
+                                && Character.isLowerCase(str.charAt(i - 1))) {
+                            sb.insert(i, "_");
+                            str = sb.toString();
+                        }
+                    }
+                }
+            }
+            filter.append(isSqlKeywords(str) ? str.toUpperCase() + " " : str + " ");
+        }
+
+        return SqlFormatter.format(filter.toString());
     }
 
     private static ArrayList<String> analysParam(String param) {
