@@ -9,7 +9,9 @@ import assemquerytool.entity.History;
 import assemquerytool.entity.QueryBlock;
 import assemquerytool.Utils;
 import com.github.vertical_blank.sqlformatter.SqlFormatter;
+import java.awt.Desktop;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
@@ -18,13 +20,19 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
+import java.awt.font.TextAttribute;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
@@ -39,7 +47,7 @@ import javax.swing.SwingUtilities;
  */
 public class Application extends javax.swing.JFrame {
 
-    private final String BUILD_VERSION = "4.2.1 - Updated 07-08-2023";
+    private final String BUILD_VERSION = "4.2.2 - Updated 08-08-2023";
     private Boolean historyFlag = false;
 
     static String[] arr = {"CREATE", "PRIMARY", "KEY", "INSERT", "VALUES", "INTO", "SELECT", "FROM",
@@ -61,6 +69,12 @@ public class Application extends javax.swing.JFrame {
         txtQuery.setName("txtQuery");
         txtWarning.setVisible(false);
         txtVersion.setText("Build: " + BUILD_VERSION);
+
+        Font font = txtGitRepo.getFont();
+        Map attributes = font.getAttributes();
+        attributes.put(TextAttribute.UNDERLINE, TextAttribute.UNDERLINE_ON);
+        txtGitRepo.setFont(font.deriveFont(attributes));
+
         Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
 
         this.addComponentListener(new ComponentAdapter() { //force only resize able by horizontal
@@ -97,6 +111,7 @@ public class Application extends javax.swing.JFrame {
         txtWarning = new javax.swing.JLabel();
         txtVersion = new javax.swing.JLabel();
         btnHistory = new javax.swing.JButton();
+        txtGitRepo = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("AssemQuerryTool @ducnm62");
@@ -188,6 +203,16 @@ public class Application extends javax.swing.JFrame {
             }
         });
 
+        txtGitRepo.setFont(new java.awt.Font("Tahoma", 2, 12)); // NOI18N
+        txtGitRepo.setForeground(new java.awt.Color(102, 102, 255));
+        txtGitRepo.setText("@Github repo");
+        txtGitRepo.setToolTipText("Open to checkin the github repository");
+        txtGitRepo.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                txtGitRepoMouseClicked(evt);
+            }
+        });
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -206,14 +231,19 @@ public class Application extends javax.swing.JFrame {
                                 .addComponent(btnBuild, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE)))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(0, 0, Short.MAX_VALUE))
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(btnClear, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(btnHistory)))
-                        .addGap(0, 0, Short.MAX_VALUE))
-                    .addComponent(txtWarning, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap())
+                                .addComponent(btnHistory)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                .addComponent(txtGitRepo, javax.swing.GroupLayout.PREFERRED_SIZE, 88, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                    .addGroup(layout.createSequentialGroup()
+                        .addComponent(txtWarning, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addGap(104, 104, 104))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -228,7 +258,8 @@ public class Application extends javax.swing.JFrame {
                     .addComponent(btnClear)
                     .addComponent(isCamelRev)
                     .addComponent(txtVersion)
-                    .addComponent(btnHistory))
+                    .addComponent(btnHistory)
+                    .addComponent(txtGitRepo))
                 .addGap(5, 5, 5)
                 .addComponent(txtWarning, javax.swing.GroupLayout.DEFAULT_SIZE, 20, Short.MAX_VALUE)
                 .addGap(5, 5, 5))
@@ -242,7 +273,7 @@ public class Application extends javax.swing.JFrame {
         String param = txtParam.getText();
         String query = txtQuery.getText();
 
-        //Pre-processing the params
+        // Pre-processing the params
         if (query.toLowerCase().startsWith("SQLQueryImpl(".toLowerCase())) {
             query = query.substring("SQLQueryImpl(".length(), query.length() - 1);
         }
@@ -251,12 +282,12 @@ public class Application extends javax.swing.JFrame {
             query = query.substring(1, query.length() - 1);
         }
 
-//        System.out.println(query);
         if (query == null || query.equals("")) {
             JOptionPane.showMessageDialog(null, "Nothing to build!");
             return;
         }
 
+        // Pre-format the query
         StringTokenizer st = new StringTokenizer(query, " ");
         StringBuilder filter = new StringBuilder();
         while (st.hasMoreTokens()) {
@@ -273,21 +304,23 @@ public class Application extends javax.swing.JFrame {
                     }
                 }
             }
-//            System.out.println(str);
             filter.append(isSqlKeywords(str) ? str.toUpperCase() + " " : str + " ");
         }
-//        System.out.println(filter.toString());    
         try {
             query = SqlFormatter.format(filter.toString());
         } catch (java.lang.NoClassDefFoundError er) {
             txtWarning.setText("Oops! Please place sql-formatter-1.0.1.jar inside lib folder for formatting feature.");
         }
+
+        // Create history record
         txtQuery.setText(query);
         QueryBlock queryBlock = new QueryBlock()
                 .setParams(txtParam.getText())
                 .setQuery(query)
                 .setTimestamp(new Date());
         History.getInstance().put(queryBlock.getTimestamp(), queryBlock);
+
+        // Assem the params to query
         ArrayList<String> listParam = analysParam(param);
 //        listParam.stream().forEach(System.out::println);
         String output = assembleQuery(query, listParam);
@@ -297,11 +330,14 @@ public class Application extends javax.swing.JFrame {
 
         StringSelection stringSelection = new StringSelection(output);
         try {
+            // Format further using sql-formatter-1.0.1.jar
             stringSelection = new StringSelection(SqlFormatter.format(output));
         } catch (java.lang.NoClassDefFoundError er) {
             txtWarning.setText("Oops! Please place sql-formatter-1.0.1.jar inside lib folder for formatting feature.");
             txtWarning.setVisible(true);
         }
+        
+        // Copy to clipboard
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(stringSelection, null);
 
@@ -345,6 +381,15 @@ public class Application extends javax.swing.JFrame {
         HistorySelector historySelector = new HistorySelector(this, true);
         historySelector.setVisible(true);
     }//GEN-LAST:event_btnHistoryActionPerformed
+
+    private void txtGitRepoMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_txtGitRepoMouseClicked
+        try {
+            // TODO add your handling code here:
+            openWebpage(new URL("https://github.com/ducseul/AssemQueryTool.git"));
+        } catch (MalformedURLException ex) {
+            Logger.getLogger(Application.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }//GEN-LAST:event_txtGitRepoMouseClicked
 
     /**
      * @param args the command line arguments
@@ -390,11 +435,34 @@ public class Application extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel2;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
+    private javax.swing.JLabel txtGitRepo;
     private javax.swing.JTextArea txtParam;
     private javax.swing.JTextArea txtQuery;
     private javax.swing.JLabel txtVersion;
     private javax.swing.JLabel txtWarning;
     // End of variables declaration//GEN-END:variables
+    public static boolean openWebpage(URI uri) {
+        Desktop desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+        if (desktop != null && desktop.isSupported(Desktop.Action.BROWSE)) {
+            try {
+                desktop.browse(uri);
+                return true;
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return false;
+    }
+
+    public static boolean openWebpage(URL url) {
+        try {
+            return openWebpage(url.toURI());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     private static String assembleQuery(String query, ArrayList<String> listParam) {
         String output = query;
         try {
