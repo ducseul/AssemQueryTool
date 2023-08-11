@@ -3,8 +3,11 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package assemquerytool;
+package assemquerytool.GUI;
 
+import assemquerytool.entity.History;
+import assemquerytool.entity.QueryBlock;
+import assemquerytool.Utils;
 import com.github.vertical_blank.sqlformatter.SqlFormatter;
 import java.awt.Dimension;
 import java.awt.Toolkit;
@@ -16,6 +19,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -35,7 +39,7 @@ import javax.swing.SwingUtilities;
  */
 public class Application extends javax.swing.JFrame {
 
-    private final String BUILD_VERSION = "4.1.1 - Updated 03-08-2023";
+    private final String BUILD_VERSION = "4.2.1 - Updated 07-08-2023";
     private Boolean historyFlag = false;
 
     static String[] arr = {"CREATE", "PRIMARY", "KEY", "INSERT", "VALUES", "INTO", "SELECT", "FROM",
@@ -95,7 +99,7 @@ public class Application extends javax.swing.JFrame {
         btnHistory = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setTitle("AssemQuerryTool - ducnm");
+        setTitle("AssemQuerryTool @ducnm62");
 
         jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Parameters"));
 
@@ -238,6 +242,7 @@ public class Application extends javax.swing.JFrame {
         String param = txtParam.getText();
         String query = txtQuery.getText();
 
+        //Pre-processing the params
         if (query.toLowerCase().startsWith("SQLQueryImpl(".toLowerCase())) {
             query = query.substring("SQLQueryImpl(".length(), query.length() - 1);
         }
@@ -289,7 +294,7 @@ public class Application extends javax.swing.JFrame {
         if (lstNamedParameter != null) {
             output = assemNamedParameters(output);
         }
-        
+
         StringSelection stringSelection = new StringSelection(output);
         try {
             stringSelection = new StringSelection(SqlFormatter.format(output));
@@ -507,7 +512,7 @@ public class Application extends javax.swing.JFrame {
                 }
                 String[] data = current.split("->");
                 try {
-                    lstNamedParameter.put(data[0].replace("\"", ""), data[1].split("} ")[1].replace("\"", ""));
+                    lstNamedParameter.put(data[0].replace("\"", ""), data[1].split("} ")[1].replace("\"", "").trim());
                 } catch (Exception ignore) {
 
                 }
@@ -559,7 +564,18 @@ public class Application extends javax.swing.JFrame {
     private String assemNamedParameters(String output) {
         Set<String> lstSet = lstNamedParameter.keySet();
         for (String keyword : lstSet) {
-            output = output.replaceAll(":" + keyword.trim(), lstNamedParameter.get(keyword));
+            String value = lstNamedParameter.get(keyword).trim();
+            if (Utils.isDigit(value)) {
+                output = output.replaceAll(":" + keyword.trim(), value);
+            } else if (Utils.isDate(value)) {
+                Date date = Utils.parseDate(value);
+                SimpleDateFormat oracleDateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                String formatedDate = oracleDateFormat.format(date);
+                String tmp = "TO_DATE('" + formatedDate + "','YYYY/MM/DD HH:MI:SS')";
+                output = output.replaceAll(":" + keyword.trim(), tmp);
+            } else {
+                output = output.replaceAll(":" + keyword.trim(), String.format("'%s'", value));
+            }
         }
         lstSet.clear();
         return output;

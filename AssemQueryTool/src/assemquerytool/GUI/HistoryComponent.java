@@ -3,8 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package assemquerytool;
+package assemquerytool.GUI;
 
+import assemquerytool.GUI.HistorySelector;
+import assemquerytool.entity.QueryBlock;
 import java.text.SimpleDateFormat;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
@@ -16,7 +18,7 @@ import javax.swing.text.StyledDocument;
  */
 public class HistoryComponent extends javax.swing.JPanel {
     private QueryBlock queryBlock;
-    private HistorySelector parent;
+    public HistorySelector parent;
     /**
      * Creates new form HistoryComponent
      */

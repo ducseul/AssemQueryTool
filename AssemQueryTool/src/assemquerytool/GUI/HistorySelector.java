@@ -3,8 +3,10 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package assemquerytool;
+package assemquerytool.GUI;
 
+import assemquerytool.entity.History;
+import assemquerytool.entity.QueryBlock;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GridLayout;
@@ -153,7 +155,7 @@ public class HistorySelector extends javax.swing.JDialog {
         this.dataPanel.revalidate();
     }
 
-    void callBackSelected(QueryBlock queryBlock) {
+    public void callBackSelected(QueryBlock queryBlock) {
         ((Application) parent).callBackOnSelected(queryBlock);
         this.dispose();
     }
