@@ -5,7 +5,6 @@
  */
 package assemquerytool.GUI;
 
-import assemquerytool.Constants;
 import assemquerytool.entity.History;
 import assemquerytool.entity.QueryBlock;
 import assemquerytool.Utils;
@@ -48,6 +47,9 @@ import javax.swing.SwingUtilities;
  */
 public class Application extends javax.swing.JFrame {
 
+    private final String BUILD_VERSION = "4.2.4 - Updated 13-08-2023";
+    private Boolean historyFlag = false;
+
     static String[] arr = {"CREATE", "PRIMARY", "KEY", "INSERT", "VALUES", "INTO", "SELECT", "FROM",
         "ALTER", "ADD", "DISTINCT", "UPDATE", "SET", "DELETE", "TRUNCATE",
         "AS", "ORDER", "BY", "ASC", "DESC", "BETWEEN", "WHERE", "AND", "OR",
@@ -66,7 +68,7 @@ public class Application extends javax.swing.JFrame {
         txtParam.setName("txtParam");
         txtQuery.setName("txtQuery");
         txtWarning.setVisible(false);
-        txtVersion.setText("Build: " + Constants.BUILD_VERSION);
+        txtVersion.setText("Build: " + BUILD_VERSION);
 
         Font font = txtGitRepo.getFont();
         Map attributes = font.getAttributes();
@@ -318,8 +320,8 @@ public class Application extends javax.swing.JFrame {
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(stringSelection, null);
 
-        if (Constants.historyFlag == false) {
-            Constants.historyFlag = true;
+        if (historyFlag == false) {
+            historyFlag = true;
             btnHistory.setEnabled(true);
         }
         JOptionPane.showMessageDialog(null, "Output has been copied to Clipboard!");
@@ -362,7 +364,7 @@ public class Application extends javax.swing.JFrame {
     private void txtGitRepoMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_txtGitRepoMouseClicked
         try {
             // TODO add your handling code here:
-            openWebpage(new URL(Constants.GIT_URL));
+            openWebpage(new URL("https://github.com/ducseul/AssemQueryTool.git"));
         } catch (MalformedURLException ex) {
             Logger.getLogger(Application.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -495,7 +497,17 @@ public class Application extends javax.swing.JFrame {
         StringTokenizer st = new StringTokenizer(param, "\n");
         while (st.hasMoreTokens()) {
             String current = st.nextToken();
-            if (current.contains("Long") || current.contains("Integer") || current.contains("Double")) {
+            if (current.contains("TypedValue@")) {
+                if (lstNamedParameter == null) {
+                    lstNamedParameter = new HashMap<>();
+                }
+                String[] data = current.split("->");
+                try {
+                    lstNamedParameter.put(data[0].replace("\"", ""), data[1].split("} ")[1].replace("\"", "").trim());
+                } catch (Exception ignore) {
+
+                }
+            } else if (current.contains("Long") || current.contains("Integer") || current.contains("Double")) {
                 try {
                     System.out.println("Parsing number token: " + current);
                     StringTokenizer st2 = new StringTokenizer(current, " ");
@@ -575,16 +587,6 @@ public class Application extends javax.swing.JFrame {
                 } catch (Exception ex) {
                     System.out.println("Can't parse constant: " + current);
                 }
-            } else if (current.contains("TypedValue@")) {
-                if (lstNamedParameter == null) {
-                    lstNamedParameter = new HashMap<>();
-                }
-                String[] data = current.split("->");
-                try {
-                    lstNamedParameter.put(data[0].replace("\"", ""), data[1].split("} ")[1].replace("\"", "").trim());
-                } catch (Exception ignore) {
-
-                }
             } else {
                 StringTokenizer st2 = new StringTokenizer(current, " ");
                 st2.nextToken();
@@ -636,14 +638,17 @@ public class Application extends javax.swing.JFrame {
             String value = lstNamedParameter.get(keyword).trim();
             if (Utils.isDigit(value)) {
                 output = output.replaceAll(":" + keyword.trim(), value);
+                System.out.println("Fill parameter " + ":" + keyword.trim() + " as " + value + " ::digit");
             } else if (Utils.isDate(value)) {
                 Date date = Utils.parseDate(value);
                 SimpleDateFormat oracleDateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                 String formatedDate = oracleDateFormat.format(date);
-                String tmp = "TO_DATE('" + formatedDate + "','YYYY/MM/DD HH:MI:SS')";
+                String tmp = "TO_DATE('" + formatedDate + "','YYYY/MM/DD HH24:MI:SS')";
                 output = output.replaceAll(":" + keyword.trim(), tmp);
+                System.out.println("Fill parameter " + ":" + keyword.trim() + " as " + tmp + " ::date");
             } else {
                 output = output.replaceAll(":" + keyword.trim(), String.format("'%s'", value));
+                System.out.println("Fill parameter " + ":" + keyword.trim() + " as " + String.format("'%s'", value) + " ::String");
             }
         }
         lstSet.clear();
