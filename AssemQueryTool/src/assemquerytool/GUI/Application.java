@@ -37,6 +37,8 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
@@ -47,7 +49,7 @@ import javax.swing.SwingUtilities;
  */
 public class Application extends javax.swing.JFrame {
 
-    private final String BUILD_VERSION = "4.2.4 - Updated 13-08-2023";
+    private final String BUILD_VERSION = "4.2.5 - Updated 13-03-2024";
     private Boolean historyFlag = false;
 
     static String[] arr = {"CREATE", "PRIMARY", "KEY", "INSERT", "VALUES", "INTO", "SELECT", "FROM",
@@ -426,7 +428,7 @@ public class Application extends javax.swing.JFrame {
             try {
                 desktop.browse(uri);
                 return true;
-            } catch (Exception e) {
+            } catch (IOException e) {
                 e.printStackTrace();
             }
         }
@@ -450,8 +452,10 @@ public class Application extends javax.swing.JFrame {
                 StringBuilder sb = new StringBuilder();
                 int index = 0;
                 while (st.hasMoreTokens()) {
-                    sb.append(st.nextToken() + " ");
-                    sb.append(listParam.get(index) + " ");
+                    sb.append(st.nextToken())
+                            .append(" ");
+                    sb.append(listParam.get(index))
+                            .append(" ");
                     index++;
                 }
                 output = sb.toString();
@@ -497,6 +501,9 @@ public class Application extends javax.swing.JFrame {
         StringTokenizer st = new StringTokenizer(param, "\n");
         while (st.hasMoreTokens()) {
             String current = st.nextToken();
+            if (current.startsWith("values = {ArrayList@")) {
+                continue;
+            }
             if (current.contains("TypedValue@")) {
                 if (lstNamedParameter == null) {
                     lstNamedParameter = new HashMap<>();
@@ -534,26 +541,26 @@ public class Application extends javax.swing.JFrame {
                         st2 = new StringTokenizer(tmp2, "\"");
                         String tmp = st2.nextToken();
                         if (tmp.matches("[0-9]{4}[-][0-9]{2}[-][0-9]{2}")) {
-                            tmp = "TO_DATE('" + tmp + "','YYYY-MM-DD')";
-                            sb.append(tmp + " ");
+                            tmp = "TO_DATE('" + tmp + "','YYYY-MM-DD') ";
+                            sb.append(tmp);
                             listParam.add(sb.toString());
                         } else if (tmp.matches("[A-Z][a-z]{2}[/][0-9]{2}[/][0-9]{4}")) {
-                            tmp = "TO_DATE('" + tmp + "','Mon/DD/YYYY')";
-                            sb.append(tmp + " ");
+                            tmp = "TO_DATE('" + tmp + "','Mon/DD/YYYY') ";
+                            sb.append(tmp);
                             listParam.add(sb.toString());
                         } else {
-                            tmp = "TO_DATE('" + st2.nextToken() + "','YYYY-MM-DD')";
-                            sb.append(tmp + " ");
+                            tmp = "TO_DATE('" + st2.nextToken() + "','YYYY-MM-DD') ";
+                            sb.append(tmp);
                             listParam.add(sb.toString());
                         }
                     } else {
                         if (nextToken.split("\"")[1].matches("[0-9]{4}[-][0-9]{2}[-][0-9]{2}")) {
-                            String tmp = "TO_DATE('" + nextToken.split("\"")[1] + "','YYYY-MM-DD')";
-                            sb.append(tmp + " ");
+                            String tmp = "TO_DATE('" + nextToken.split("\"")[1] + "','YYYY-MM-DD') ";
+                            sb.append(tmp);
                             listParam.add(sb.toString());
                         } else if (nextToken.split("\"")[1].matches("[A-Z][a-z]{2}[/][0-9]{2}[/][0-9]{4}")) {
-                            String tmp = "TO_DATE('" + nextToken.split("\"")[1] + "','Mon/DD/YYYY')";
-                            sb.append(tmp + " ");
+                            String tmp = "TO_DATE('" + nextToken.split("\"")[1] + "','Mon/DD/YYYY') ";
+                            sb.append(tmp);
                             listParam.add(sb.toString());
                         }
                     }
@@ -588,12 +595,14 @@ public class Application extends javax.swing.JFrame {
                     System.out.println("Can't parse constant: " + current);
                 }
             } else {
-                StringTokenizer st2 = new StringTokenizer(current, " ");
-                st2.nextToken();
-                st2.nextToken();
-                String tmp = st2.nextToken();
-                st2 = new StringTokenizer(tmp, "\"");
-                listParam.add("'" + st2.nextToken() + "'");
+                String pattern = "\"(.*?)\"";
+                Pattern currentRegex = Pattern.compile(pattern);
+                Matcher m = currentRegex.matcher(current);
+                String tempExtract = current;
+                if (m.find()) {
+                    tempExtract = m.group(1);
+                }
+                listParam.add("'" + tempExtract + "'");
             }
         }
 
